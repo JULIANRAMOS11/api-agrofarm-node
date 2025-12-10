@@ -1,1 +1,14 @@
-
+[
+  {
+    "id": 1,
+    "username": "operario1",
+    "passwordHash": "$2b$10$4cLUTNIs2M/4hbdwgApXXe5Vb5pxv5oyNIvNhiaI4B3rr2w3DDYHW",
+    "rol": "USER"
+  },
+  {
+    "id": 2,
+    "username": "operario2",
+    "passwordHash": "$2b$10$RtBv0FBUwcK.Tbh/jhp6zO7/3fYf2NM5ZJHIH6ItwWNTyHsPtsEAa",
+    "rol": "USER"
+  }
+]
