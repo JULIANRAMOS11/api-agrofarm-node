@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "codigo_arete": "CER-001",
+    "sexo": "HEMBRA",
+    "fecha_nacimiento": "2024-01-15",
+    "estado": "ACTIVO",
+    "etapa": "RECRIA",
+    "peso_actual": 35.5,
+    "lote": "L1"
+  },
+  {
+    "id": 2,
+    "codigo_arete": "CER-002",
+    "sexo": "MACHO",
+    "fecha_nacimiento": "2024-02-10",
+    "estado": "ACTIVO",
+    "etapa": "CEBA",
+    "peso_actual": 70.2,
+    "lote": "L2"
+  }
+]
