@@ -1,172 +1,111 @@
-// src/controllers/pigs.controller.js
-// Controlador de cerdos (pigs) AGROFARM
+import { query } from "../config/db.js";
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PIGS_FILE_PATH = path.join(__dirname, "..", "data", "pigs.json");
-
-function readPigs() {
+export async function getAllPigs(_req, res) {
   try {
-    const data = fs.readFileSync(PIGS_FILE_PATH, "utf8");
-    return JSON.parse(data);
-  } catch (error) {
-    console.error("Error leyendo pigs.json:", error);
-    return [];
+    const { rows } = await query("SELECT * FROM pigs ORDER BY id");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: "Error obteniendo cerdos", detail: err.message });
   }
 }
 
-function writePigs(pigs) {
-  fs.writeFileSync(PIGS_FILE_PATH, JSON.stringify(pigs, null, 2), "utf8");
-}
+export async function getPigById(req, res) {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) return res.status(400).json({ error: "ID inválido" });
 
-// GET /api/pigs
-export function getAllPigs(req, res) {
-  const pigs = readPigs();
-  return res.json(pigs);
-}
-
-// GET /api/pigs/:id
-export function getPigById(req, res) {
-  const id = parseInt(req.params.id, 10);
-  const pigs = readPigs();
-  const pig = pigs.find((p) => p.id === id);
-
-  if (!pig) {
-    return res.status(404).json({ error: "Cerdo no encontrado" });
+  try {
+    const { rows } = await query("SELECT * FROM pigs WHERE id = $1", [id]);
+    if (!rows[0]) return res.status(404).json({ error: "Cerdo no encontrado" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Error obteniendo cerdo", detail: err.message });
   }
-
-  return res.json(pig);
 }
 
-// POST /api/pigs
-export function createPig(req, res) {
-  const {
-    codigo_arete,
-    sexo,
-    fecha_nacimiento,
-    estado,
-    etapa,
-    peso_actual,
-    lote,
-  } = req.body;
-
+export async function createPig(req, res) {
+  const { codigo_arete, sexo, fecha_nacimiento, estado, peso_actual, lote_id, etapa_id, raza_id } = req.body;
   if (!codigo_arete || !sexo || !fecha_nacimiento) {
-    return res.status(400).json({
-      error:
-        "Los campos codigo_arete, sexo y fecha_nacimiento son obligatorios",
-    });
+    return res.status(400).json({ error: "codigo_arete, sexo y fecha_nacimiento son obligatorios" });
   }
 
-  const pigs = readPigs();
-
-  const newPig = {
-    id: pigs.length > 0 ? pigs[pigs.length - 1].id + 1 : 1,
-    codigo_arete,
-    sexo,
-    fecha_nacimiento,
-    estado: estado || "ACTIVO",
-    etapa: etapa || "DESCONOCIDA",
-    peso_actual: peso_actual || 0,
-    lote: lote || "SIN_LOTE",
-  };
-
-  pigs.push(newPig);
-  writePigs(pigs);
-
-  return res.status(201).json({
-    mensaje: "Cerdo creado correctamente",
-    cerdo: newPig,
-  });
-}
-
-// PUT /api/pigs/:id
-export function updatePig(req, res) {
-  const id = parseInt(req.params.id, 10);
-  const pigs = readPigs();
-  const index = pigs.findIndex((p) => p.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: "Cerdo no encontrado" });
+  try {
+    const { rows } = await query(
+      `INSERT INTO pigs (codigo_arete, sexo, fecha_nacimiento, estado, peso_actual, lote_id, etapa_id, raza_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [
+        codigo_arete,
+        sexo,
+        fecha_nacimiento,
+        estado || "ACTIVO",
+        peso_actual ?? 0,
+        lote_id || null,
+        etapa_id || null,
+        raza_id || null,
+      ]
+    );
+    res.status(201).json({ mensaje: "Cerdo creado", cerdo: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Error creando cerdo", detail: err.message });
   }
-
-  const pig = pigs[index];
-  const {
-    codigo_arete,
-    sexo,
-    fecha_nacimiento,
-    estado,
-    etapa,
-    peso_actual,
-    lote,
-  } = req.body;
-
-  pigs[index] = {
-    ...pig,
-    codigo_arete: codigo_arete ?? pig.codigo_arete,
-    sexo: sexo ?? pig.sexo,
-    fecha_nacimiento: fecha_nacimiento ?? pig.fecha_nacimiento,
-    estado: estado ?? pig.estado,
-    etapa: etapa ?? pig.etapa,
-    peso_actual: peso_actual ?? pig.peso_actual,
-    lote: lote ?? pig.lote,
-  };
-
-  writePigs(pigs);
-
-  return res.json({
-    mensaje: "Cerdo actualizado correctamente",
-    cerdo: pigs[index],
-  });
 }
 
-// PATCH /api/pigs/:id/status
-export function updatePigStatus(req, res) {
-  const id = parseInt(req.params.id, 10);
+export async function updatePig(req, res) {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) return res.status(400).json({ error: "ID inválido" });
+
+  const { codigo_arete, sexo, fecha_nacimiento, estado, peso_actual, lote_id, etapa_id, raza_id } = req.body;
+
+  try {
+    const { rows } = await query(
+      `UPDATE pigs
+         SET codigo_arete = COALESCE($1, codigo_arete),
+             sexo = COALESCE($2, sexo),
+             fecha_nacimiento = COALESCE($3, fecha_nacimiento),
+             estado = COALESCE($4, estado),
+             peso_actual = COALESCE($5, peso_actual),
+             lote_id = COALESCE($6, lote_id),
+             etapa_id = COALESCE($7, etapa_id),
+             raza_id = COALESCE($8, raza_id)
+       WHERE id = $9
+       RETURNING *`,
+      [codigo_arete, sexo, fecha_nacimiento, estado, peso_actual, lote_id, etapa_id, raza_id, id]
+    );
+
+    if (!rows[0]) return res.status(404).json({ error: "Cerdo no encontrado" });
+    res.json({ mensaje: "Cerdo actualizado", cerdo: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Error actualizando cerdo", detail: err.message });
+  }
+}
+
+export async function updatePigStatus(req, res) {
+  const id = Number(req.params.id);
   const { estado } = req.body;
-
-  if (!estado) {
-    return res
-      .status(400)
-      .json({ error: "El campo estado es obligatorio para esta operación" });
+  if (Number.isNaN(id) || !estado) {
+    return res.status(400).json({ error: "ID y estado son obligatorios" });
   }
 
-  const pigs = readPigs();
-  const index = pigs.findIndex((p) => p.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: "Cerdo no encontrado" });
+  try {
+    const { rows } = await query("UPDATE pigs SET estado = $1 WHERE id = $2 RETURNING *", [
+      estado,
+      id,
+    ]);
+    if (!rows[0]) return res.status(404).json({ error: "Cerdo no encontrado" });
+    res.json({ mensaje: "Estado actualizado", cerdo: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Error actualizando estado", detail: err.message });
   }
-
-  pigs[index].estado = estado;
-  writePigs(pigs);
-
-  return res.json({
-    mensaje: "Estado del cerdo actualizado correctamente",
-    cerdo: pigs[index],
-  });
 }
 
-// DELETE /api/pigs/:id
-export function deletePig(req, res) {
-  const id = parseInt(req.params.id, 10);
-  const pigs = readPigs();
-  const index = pigs.findIndex((p) => p.id === id);
+export async function deletePig(req, res) {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) return res.status(400).json({ error: "ID inválido" });
 
-  if (index === -1) {
-    return res.status(404).json({ error: "Cerdo no encontrado" });
+  try {
+    const { rows } = await query("DELETE FROM pigs WHERE id = $1 RETURNING *", [id]);
+    if (!rows[0]) return res.status(404).json({ error: "Cerdo no encontrado" });
+    res.json({ mensaje: "Cerdo eliminado", cerdo: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Error eliminando cerdo", detail: err.message });
   }
-
-  const deleted = pigs[index];
-  pigs.splice(index, 1);
-  writePigs(pigs);
-
-  return res.json({
-    mensaje: "Cerdo eliminado correctamente",
-    cerdo: deleted,
-  });
 }

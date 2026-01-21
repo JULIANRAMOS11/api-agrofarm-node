@@ -1,32 +1,35 @@
-// src/index.js
-// API AGROFARM - Evidencia GA7-220501096-AA5-EV03
-
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import pigsRoutes from "./routes/pigs.routes.js";
+import { pool } from "./config/db.js";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN?.split(",").map((o) =>
+  o.trim()
+);
 
-// Middlewares
-app.use(cors());
+app.use(cors({ origin: FRONTEND_ORIGIN || "*", credentials: false }));
 app.use(express.json());
 
-// Ruta de prueba
-app.get("/", (req, res) => {
-  res.json({
-    mensaje: "API AGROFARM funcionando correctamente",
-  });
+app.get("/health", async (_req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT NOW() AS now");
+    res.json({ ok: true, now: rows[0].now });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
-// Rutas de autenticación
 app.use("/api/auth", authRoutes);
-
-// Rutas de cerdos
 app.use("/api/pigs", pigsRoutes);
 
-// Levantar servidor
+app.use((req, res) => res.status(404).json({ error: "Not found" }));
+
 app.listen(PORT, () => {
-  console.log(`Servidor AGROFARM escuchando en http://localhost:${PORT}`);
+  console.log(`API AGROFARM running on http://localhost:${PORT}`);
 });

@@ -10,5 +10,11 @@
     "username": "operario2",
     "passwordHash": "$2b$10$RtBv0FBUwcK.Tbh/jhp6zO7/3fYf2NM5ZJHIH6ItwWNTyHsPtsEAa",
     "rol": "USER"
+  },
+  {
+    "id": 3,
+    "username": "operario3",
+    "passwordHash": "$2b$10$WrU6CJlUFjTmtcZBRb4.NuoqjV/ts2fUDgXgoH68ui31e3fzmRz7C",
+    "rol": "USER"
   }
 ]

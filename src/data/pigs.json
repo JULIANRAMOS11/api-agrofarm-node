@@ -18,15 +18,5 @@
     "etapa": "LEVANTE",
     "peso_actual": 42.3,
     "lote": "L3"
-  },
-  {
-    "id": 4,
-    "codigo_arete": "CER-003",
-    "sexo": "HEMBRA",
-    "fecha_nacimiento": "2024-03-05",
-    "estado": "ACTIVO",
-    "etapa": "LEVANTE",
-    "peso_actual": 42.3,
-    "lote": "L3"
   }
 ]
